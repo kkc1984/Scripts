@@ -2,7 +2,7 @@ class ServerInfo:
 
     def Versioninfo(self, ServerName, Model, Ip4address, Idrac, Lifecycle, Nic, ServiceTag, SysProfile,
                     CpuPower, Bios, Perc, WarrantyStartDate, WarrantyEndDate, updated, DataCenter, SlotNumber,
-                    RackLocation, ChassisServiceTag, DnsName, NumCpu, ProcessorType, NumMem, MemSize, Cores):
+                    RackLocation, ChassisServiceTag, DnsName, NumCpu, ProcessorType, NumMem, MemSize, Cores, ChassisIP):
         self.ServerName = ServerName
         self.Model = Model
         self.Ip4address = Ip4address
@@ -27,6 +27,8 @@ class ServerInfo:
         self.NumMem = NumMem
         self.MemSize = MemSize
         self.Cores = Cores
+        self.ChassisIP = ChassisIP
+
 
 
 

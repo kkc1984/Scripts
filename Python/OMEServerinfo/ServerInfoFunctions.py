@@ -3,13 +3,15 @@ import json
 from datetime import date
 import ServerInfo as ServerObject
 import paramiko
+from xml.etree import ElementTree as ET
+from datetime import datetime
 
 data_center = {
-    '1.1.1.1': 'DLAS',
-    '1.1.1.2': 'PLAS',
-    '1.1.1.3': 'ATL',
-    '1.1.1.4': 'QTSMIA',
-    '1.1.1.5': 'TOR'
+    '10.146.16.14': 'DLAS',
+    '10.147.16.60': 'PLAS',
+    '10.99.112.173': 'ATL',
+    '10.71.69.34': 'QTSMIA',
+    '10.130.112.90': 'TOR'
 }
 
 response = None
@@ -38,8 +40,10 @@ def authenticate_with_ome(ip_address, user_name, password):
 def ServerProp(server, ip_address, warranty_info, base_url, headers, duser, dpassword, path):
     global data_center
     global response
+
     cpu_power = 'NA'
     sysprofile = 'NA'
+    ChassisIP = 'NA'
 
     my_dc = data_center[ip_address]
     updated = (date.today()).strftime("%m/%d/%Y")
@@ -78,6 +82,7 @@ def ServerProp(server, ip_address, warranty_info, base_url, headers, duser, dpas
     ip_address, dns_name = GetVersion(firmware_ver, 'deviceManagement')
     rack_location = '"' + GetVersion(firmware_ver, 'deviceLocation') + '"'
 
+
     if 'FX2' in model:
         idrac = GetVersion(firmware_ver, 'deviceSoftware', 'CMC')
     else:
@@ -96,11 +101,54 @@ def ServerProp(server, ip_address, warranty_info, base_url, headers, duser, dpas
             try:
                 cpu_power = data['ProcPwrPerf']
             except:
-                cpu_power = ''
+                cpu_power = 'NA'
             try:
                 sysprofile = data['SysProfile']
             except:
-                sysprofile = ''
+                sysprofile = 'NA'
+
+            if 'FC630' in model:
+                try:
+                    payload = {'user': 'root', 'password': f'{dpassword}'}
+
+                    url = f'https://{ip_address}/data/login'
+
+                    s = requests.session()
+
+                    p = s.post(url, data=payload, verify=False)
+
+                    value = ET.fromstring(p.content).find('forwardUrl')
+                    st2 = value.text.split(',')[1].replace('ST2=', '')
+
+                    headers = {
+                        'ST2': f'{st2}'
+                    }
+
+                    s.headers.update(headers)
+
+                    payload2 = {
+                        'get': 'cmc_ipaddress'}
+
+                    url2 = f'https://{ip_address}/data?get=cmc_ipaddress'
+
+                    t = s.post(url2, data=payload2, verify=False)
+
+                    ChassisIP = (ET.fromstring(t.content).find('cmc_url')).text.replace('https://','').replace(':443','')
+                except:
+                    ChassisIP = 'NA'
+            elif 'FC640' in model:
+                try:
+                    response = requests.get('https://%s/redfish/v1/Managers/System.Embedded.1/Attributes?$select=ChassisInfo.*' % ip_address,
+                                            verify=False,auth=(duser, dpassword))
+                except:
+                    ChassisIP = 'NA'
+
+                if response is not None and response.status_code == 200:
+                    try:
+                        data = (response.json()).get('Attributes')
+                        ChassisIP = data['ChassisInfo.1.IPV4Address']
+                    except:
+                        ChassisIP = 'NA'
 
     bios = GetVersion(firmware_ver, 'deviceSoftware', 'BIOS')
     nic = GetVersion(firmware_ver, 'deviceSoftware', 'QLogic')
@@ -110,12 +158,47 @@ def ServerProp(server, ip_address, warranty_info, base_url, headers, duser, dpas
     NumMem, MemSize = GetVersion(firmware_ver, 'serverMemoryDevices')
     drives = GetVersion(firmware_ver, 'serverArrayDisks')
 
+    dict = \
+        {
+            'server_name':server_name,
+            'model':model,
+            'ip_address':ip_address,
+            'idrac':idrac,
+            'lifecycle':lifecycle,
+            'nic':nic,
+            'service_tag':service_tag,
+            'sysprofile':sysprofile,
+            'cpu_power':cpu_power,
+            'bios':bios,
+            'perc':perc,
+            'start_date':start_date,
+            'warranty_end':warranty_end,
+            'updated':updated,
+            'my_dc':my_dc,
+            'slot_number':slot_number,
+            'rack_location':rack_location,
+            'chassis_service_tag':chassis_service_tag,
+            'dns_name':dns_name,
+            'NumCpu':NumCpu,
+            'ProcessorType':ProcessorType,
+            'NumMem':NumMem,
+            'MemSize':MemSize,
+            'Cores':Cores,
+            'ChassisIP':ChassisIP
+        }
+    if None in dict.values():
+        for key,value in dict.items():
+           if value == None:
+                dict[key] = 'NA'
+
+
     my_object = ServerObject.ServerInfo()
 
-    my_object.Versioninfo(server_name, model, ip_address, idrac, lifecycle, nic, service_tag,
-                          sysprofile, cpu_power, bios, perc, start_date, warranty_end, updated,
-                          my_dc, slot_number, rack_location, chassis_service_tag, dns_name,
-                          NumCpu, ProcessorType, NumMem, MemSize, Cores)
+    my_object.Versioninfo(dict['server_name'], dict['model'], dict['ip_address'], dict['idrac'], dict['lifecycle'],
+                          dict['nic'], dict['service_tag'],
+                          dict['sysprofile'], dict['cpu_power'], dict['bios'], dict['perc'], dict['start_date'], dict['warranty_end'], dict['updated'],
+                          dict['my_dc'], dict['slot_number'], dict['rack_location'], dict['chassis_service_tag'], dict['dns_name'],
+                          dict['NumCpu'], dict['ProcessorType'], dict['NumMem'], dict['MemSize'], dict['Cores'], dict['ChassisIP'])
 ## write disk info
     disk_list = []
     if drives != 'NA':
@@ -254,12 +337,17 @@ def connectSSH(ip_address, duser, dpassword):
 
 
 def writeCsv(server_objects, my_dc, path):
+    time = datetime.now()
     for i in server_objects:
         myobj = i.result()
         line = f'{myobj.ServerName},{myobj.Model},{myobj.Ip4address},{myobj.Idrac},{myobj.Lifecycle},{myobj.Nic},' \
                f'{myobj.ServiceTag},{myobj.SysProfile},{myobj.CpuPower},{myobj.Bios},{myobj.Perc},{myobj.WarrantyStartDate},{myobj.WarrantyEndDate},' \
                f'{myobj.updated},{myobj.DataCenter},{myobj.SlotNumber},{myobj.RackLocation}' \
-               f',{myobj.ChassisServiceTag},{myobj.DnsName},{myobj.NumCpu},{myobj.ProcessorType},{myobj.NumMem},{myobj.MemSize},{myobj.Cores}'
-
-        with open(f'{path}\\{my_dc}.csv', 'a') as f:
-            f.writelines(f'{line}\n')
+               f',{myobj.ChassisServiceTag},{myobj.DnsName},{myobj.NumCpu},{myobj.ProcessorType},{myobj.NumMem},{myobj.MemSize},{myobj.Cores},' \
+               f'{myobj.ChassisIP}'
+        try:
+            with open(f'{path}\\{my_dc}.csv', 'a') as f:
+                f.writelines(f'{line}\n')
+        except Exception as e:
+            with open(f'{path}\\{my_dc}ERROR.txt', 'a') as f:
+                f.writelines(f'{e} {time.strftime("%d/%m/%Y %H:%M:%S")}\n')

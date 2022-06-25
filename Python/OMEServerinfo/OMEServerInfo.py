@@ -28,7 +28,7 @@ file = open(f'{path}\\{my_dc}.csv', 'w')
 file.writelines(
     'Servername,Model,Ip4address,Idrac,Lifecycle,Nic,ServiceTag,SysProfile,CpuPower,Bios,Perc,WarrantyStartDate,'
     'WarrantyEndDate,Updated,DataCenter,SlotNumber,RackLocation,ChassisServiceTag,DnsName,NumCpu,'
-    'ProcessorType,NumMem,MemSize,Cores\n')
+    'ProcessorType,NumMem,MemSize,Cores,ChassisIP\n')
 file.close()
 
 file = open(f'{path}\\{my_dc}Disk.csv', 'w')
@@ -52,6 +52,7 @@ if auth_success:
                                           duser, dpassword, path) for dev in devices]
 
     sf.writeCsv(server_objects, my_dc, path)
+
 
     sys.exit()
 
