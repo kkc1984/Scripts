@@ -14,4 +14,4 @@ idractool sshs into a list of ips provided and sets up various things like addin
 access, ntp, snmp, boot order, cpu settings, etc
 
 omeserverinfo hits the OME server API, idrac api thru readfish, and idrac gui scraping data from data not available on the other 2, and collects info from each server. 
-i.e. firmware versions, cpu settings, servicetags, chassis ips, slot numbers for each blade etc. 
+i.e. firmware versions, cpu settings, warranty info, servicetags, chassis ips, slot numbers for each blade etc. 
