@@ -6,7 +6,7 @@ gcp folder contains scripts related to google cloud, autodeploy is a script that
 network, num of cpu / memory etc. theres a decom script, and QA scripts. 
 
 driveswap script was used for migrations of current iscsi attached volumes to vmdks. adds 3 new volumes stops sql migrates the data, and removes the current volumes and 
-relables the new volumes with old drive letters 
+relabels the new volumes with old drive letters 
 
 python folder has some of apps I wrote for data extraction and oob idrac setups, 
 
