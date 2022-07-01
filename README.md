@@ -13,5 +13,5 @@ python folder has some of apps I wrote for data extraction and oob idrac setups,
 idractool sshs into a list of ips provided and sets up various things like adding AD group
 access, ntp, snmp, boot order, cpu settings, etc
 
-omeserverinfo hits the OME server API, idrac api thru redfish, ssh, and idrac gui scraping data from data not available on the other 2, and collects info from each server. 
+omeserverinfo hits the OME server API, idrac api thru redfish, ssh, and idrac gui scraping data from data not available on the other 3, and collects info from each server. 
 i.e. firmware versions, cpu settings, warranty info, servicetags, chassis ips, slot numbers for each blade etc. 
