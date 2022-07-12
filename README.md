@@ -3,7 +3,7 @@
 OME ent is module written that hits open manage api to create discovery groups, addserver to custome groups,  and get Dell server info.
 
 gcp folder contains scripts related to google cloud, autodeploy is a script that deploys vms from an excel sheet where you can specify different variables, name, project,
-network, num of cpu / memory etc. theres a decom script, and QA scripts. 
+network, num of cpu / memory, sole tenancy, clustered vms, reservations, etc. theres a decom script, and QA scripts. 
 
 driveswap script was used for migrations of current iscsi attached volumes to vmdks. adds 3 new volumes stops sql migrates the data, and removes the current volumes and 
 relabels the new volumes with old drive letters 
